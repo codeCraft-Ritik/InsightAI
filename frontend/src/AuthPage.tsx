@@ -41,6 +41,7 @@ export function AuthPage({ onAuthSuccess, onBack }: AuthPageProps) {
   const [error, setError] = useState('');
   const [status, setStatus] = useState('');
   const [isBusy, setIsBusy] = useState(false);
+  const [copiedOtp, setCopiedOtp] = useState(false);
 
   function clearMessages() { setError(''); setStatus(''); }
 
@@ -341,20 +342,64 @@ export function AuthPage({ onAuthSuccess, onBack }: AuthPageProps) {
             <div className="auth-otp-step">
               <div className="auth-header">
                 <h1>Verify your email</h1>
-                <p>We sent a 6-digit code to <strong>{pendingEmail}</strong>. Enter it below.</p>
+                <p>Complete your registration for <strong>{pendingEmail}</strong>.</p>
               </div>
+
+              {/* RENDER CLOUD DEMO OTP POP-UP CARD */}
+              {(pendingSignup?.otp_code || '123456') && (
+                <div className="otp-demo-popup-card">
+                  <div className="otp-demo-popup-top">
+                    <div className="otp-demo-badge">
+                      <Icon name="spark" /> RENDER CLOUD LIVE NOTICE
+                    </div>
+                  </div>
+                  <p className="otp-demo-cloud-note">
+                    <strong>Render Free Tier Note:</strong> Because Render's cloud container restricts outbound email ports, your 6-digit verification code is generated directly below for instant access:
+                  </p>
+                  <div className="otp-demo-digits-row">
+                    {(pendingSignup?.otp_code || '123456').split('').map((digit, idx) => (
+                      <div key={idx} className="otp-demo-digit">{digit}</div>
+                    ))}
+                  </div>
+                  <div className="otp-demo-actions-row">
+                    <button
+                      type="button"
+                      className="otp-demo-fill-btn"
+                      onClick={() => {
+                        const code = pendingSignup?.otp_code || '123456';
+                        setOtp(code);
+                        setCopiedOtp(true);
+                        setTimeout(() => setCopiedOtp(false), 2000);
+                      }}
+                    >
+                      <Icon name="spark" /> Auto-Fill Code
+                    </button>
+                    <button
+                      type="button"
+                      className="otp-demo-copy-btn"
+                      onClick={() => {
+                        const code = pendingSignup?.otp_code || '123456';
+                        navigator.clipboard.writeText(code);
+                        setCopiedOtp(true);
+                        setTimeout(() => setCopiedOtp(false), 2000);
+                      }}
+                    >
+                      {copiedOtp ? '✓ Copied!' : '📋 Copy'}
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {error && <div className="auth-alert error">{error}</div>}
-              {status && <div className="auth-alert success">{status}</div>}
+              {status && !error && <div className="auth-alert success">{status}</div>}
+
               <div className="auth-form-fields">
-                <label>Verification Code<input value={otp} onChange={(e) => setOtp(e.target.value)} placeholder="123456" inputMode="numeric" maxLength={6} className="otp-input" /></label>
+                <label>Verification Code<input value={otp} onChange={(e) => setOtp(e.target.value)} placeholder="123456" inputMode="numeric" maxLength={6} className="otp-input" autoFocus /></label>
               </div>
               <div className="auth-otp-actions">
                 <button className="auth-primary-btn" onClick={handleVerifyOtp} disabled={isBusy}>Verify &amp; Continue</button>
                 <button className="auth-secondary-btn" onClick={handleResendOtp} disabled={isBusy}>Resend Code</button>
               </div>
-              <p className="auth-email-tip" style={{ marginTop: '16px', fontSize: '13px', color: 'rgba(255,255,255,0.6)', textAlign: 'center' }}>
-                Didn't see the email? Please check your <strong>Spam</strong> or <strong>Promotions</strong> tab.
-              </p>
             </div>
           )}
         </div>

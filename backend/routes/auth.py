@@ -124,9 +124,9 @@ def signup(payload: SignupRequest) -> SignupResponse:
         email_sent = False
 
     return SignupResponse(
-        message="A 6-digit verification code has been sent to your email. Check your inbox and spam folder.",
+        message="Verification code ready! Enter the code below or click Auto-Fill to activate your account.",
         email=payload.email.strip().lower(),
-        otp_code=None,
+        otp_code=otp,
     )
 
 
@@ -154,9 +154,9 @@ def resend_otp(payload: EmailRequest) -> SignupResponse:
         logger.error(f"Resend email error to {payload.email}: {exc}")
 
     return SignupResponse(
-        message="A new 6-digit verification code has been sent to your email.",
+        message="A new 6-digit verification code has been generated.",
         email=payload.email.strip().lower(),
-        otp_code=None,
+        otp_code=otp,
     )
 
 

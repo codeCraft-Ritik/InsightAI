@@ -5426,3 +5426,168 @@ a { color: inherit; }
   width: 16px;
   height: 16px;
 }
+
+/* =====================================================
+   OTP DEMO POP-UP CARD (RENDER CLOUD ENHANCEMENT)
+   ===================================================== */
+.otp-demo-popup-card {
+  margin: 0 0 1.25rem;
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%);
+  border: 1.5px solid rgba(99, 102, 241, 0.45);
+  border-radius: 16px;
+  padding: 1.4rem;
+  box-shadow: 0 10px 30px -5px rgba(99, 102, 241, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(16px);
+  position: relative;
+  overflow: hidden;
+  animation: otpCardPop 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.otp-demo-popup-card::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.12) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+.otp-demo-popup-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.otp-demo-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #a5b4fc;
+  background: rgba(99, 102, 241, 0.18);
+  border: 1px solid rgba(99, 102, 241, 0.35);
+  padding: 0.3rem 0.75rem;
+  border-radius: 9999px;
+}
+
+.otp-demo-badge svg {
+  width: 13px;
+  height: 13px;
+  color: #818cf8;
+}
+
+.otp-demo-cloud-note {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  line-height: 1.5;
+  margin: 0 0 1.1rem;
+}
+
+.otp-demo-cloud-note strong {
+  color: #e2e8f0;
+}
+
+.otp-demo-digits-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  margin-bottom: 1.1rem;
+}
+
+.otp-demo-digit {
+  width: 38px;
+  height: 46px;
+  background: rgba(15, 23, 42, 0.8);
+  border: 2px solid rgba(129, 140, 248, 0.5);
+  border-radius: 10px;
+  color: #ffffff;
+  font-family: 'Fira Code', 'Courier New', monospace;
+  font-size: 1.5rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3), 0 0 10px rgba(99, 102, 241, 0.2);
+  transition: all 0.2s ease;
+  animation: digitGlow 2.5s infinite alternate ease-in-out;
+}
+
+.otp-demo-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.otp-demo-fill-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  padding: 0.6rem 1rem;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  color: #ffffff;
+  border: none;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 3px 12px rgba(99, 102, 241, 0.4);
+  transition: all 0.18s ease;
+}
+
+.otp-demo-fill-btn:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.1);
+  box-shadow: 0 6px 16px rgba(99, 102, 241, 0.55);
+}
+
+.otp-demo-copy-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.6rem 0.9rem;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #cbd5e1;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.otp-demo-copy-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+}
+
+@keyframes otpCardPop {
+  0% {
+    opacity: 0;
+    transform: scale(0.94) translateY(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes digitGlow {
+  0% {
+    border-color: rgba(99, 102, 241, 0.4);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+  100% {
+    border-color: rgba(168, 85, 247, 0.8);
+    box-shadow: 0 4px 16px rgba(168, 85, 247, 0.35);
+  }
+}
