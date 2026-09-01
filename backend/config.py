@@ -31,19 +31,19 @@ class Settings:
     jwt_algorithm: str = os.getenv("JWT_ALGORITHM", "HS256")
     access_token_expire_minutes: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "480"))
     database_path: Path = _resolve_path("DATABASE_PATH", BASE_DIR / "database" / "insightai.sqlite3")
-    mongo_uri: str = os.getenv("MONGODB_URI", os.getenv("MONGO_URI", "mongodb://localhost:27017"))
-    mongo_database: str = os.getenv("MONGODB_DATABASE", "insightai")
-    mongo_users_collection: str = os.getenv("MONGODB_USERS_COLLECTION", "users")
-    allow_mongo_fallback: bool = os.getenv("ALLOW_MONGO_FALLBACK", "false").lower() == "true"
+    mongo_uri: str = os.getenv("MONGODB_URI", "").strip().strip('"').strip("'")
+    mongo_database: str = os.getenv("MONGODB_DATABASE", "insightai").strip().strip('"').strip("'")
+    mongo_users_collection: str = os.getenv("MONGODB_USERS_COLLECTION", "users").strip().strip('"').strip("'")
+    allow_mongo_fallback: bool = os.getenv("ALLOW_MONGO_FALLBACK", "true").lower() == "true"
     otp_expire_minutes: int = int(os.getenv("OTP_EXPIRE_MINUTES", "10"))
     expose_otp_in_response: bool = os.getenv("EXPOSE_OTP_IN_RESPONSE", "false").lower() == "true"
-    smtp_host: str = os.getenv("SMTP_HOST", "")
+    smtp_host: str = os.getenv("SMTP_HOST", "smtp.gmail.com").strip().strip('"').strip("'")
     smtp_port: int = int(os.getenv("SMTP_PORT", "587"))
-    smtp_username: str = os.getenv("SMTP_USERNAME", "")
-    smtp_password: str = os.getenv("SMTP_PASSWORD", "")
+    smtp_username: str = os.getenv("SMTP_USERNAME", "").strip().strip('"').strip("'")
+    smtp_password: str = os.getenv("SMTP_PASSWORD", "").strip().strip('"').strip("'")
     smtp_use_tls: bool = os.getenv("SMTP_USE_TLS", "true").lower() == "true"
     smtp_use_ssl: bool = os.getenv("SMTP_USE_SSL", "false").lower() == "true"
-    smtp_from_email: str = os.getenv("SMTP_FROM_EMAIL", os.getenv("SMTP_USERNAME", "no-reply@insightai.local"))
+    smtp_from_email: str = os.getenv("SMTP_FROM_EMAIL", "").strip().strip('"').strip("'")
     uploads_dir: Path = _resolve_path("UPLOADS_DIR", BASE_DIR / "uploads")
     reports_dir: Path = _resolve_path("REPORTS_DIR", BASE_DIR / "reports")
     vectorstore_dir: Path = _resolve_path("VECTORSTORE_DIR", BASE_DIR / "vectorstores")

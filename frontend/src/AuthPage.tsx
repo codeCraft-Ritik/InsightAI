@@ -86,7 +86,7 @@ export function AuthPage({ onAuthSuccess, onBack }: AuthPageProps) {
         const signupResponse = await registerAccount({ name, age, gender: signupGender, email: trimmedEmail, location, password });
         setPendingSignup(signupResponse);
         setPendingEmail(trimmedEmail);
-        setOtp(signupResponse.otp_code ?? '');
+        setOtp('');
         setStatus(signupResponse.message);
         setAuthMode('login');
       } else {
@@ -123,7 +123,7 @@ export function AuthPage({ onAuthSuccess, onBack }: AuthPageProps) {
     try {
       const result = await resendOtp(pendingEmail, password);
       setPendingSignup(result);
-      setOtp(result.otp_code ?? otp);
+      setOtp('');
       setStatus(result.message);
     } catch (exception) {
       setError(exception instanceof Error ? exception.message : 'Unable to resend OTP');

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import smtplib
+import ssl
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.utils import formatdate, make_msgid
@@ -12,11 +13,14 @@ logger = logging.getLogger(__name__)
 
 
 def _send_email_smtp(to_email: str, subject: str, text_body: str, html_body: str) -> None:
-    if not settings.smtp_host or not settings.smtp_username or not settings.smtp_password:
-        logger.error("SMTP credentials are not configured. Cannot send email.")
-        raise RuntimeError("Email service is not configured on the server.")
+    smtp_user = settings.smtp_username.strip()
+    smtp_pass = settings.smtp_password.strip()
 
-    from_email = settings.smtp_username.strip()
+    if not smtp_user or not smtp_pass:
+        logger.error("SMTP credentials (SMTP_USERNAME or SMTP_PASSWORD) are not configured.")
+        raise RuntimeError("Email service credentials not configured on the server.")
+
+    from_email = smtp_user
     recipient = to_email.strip().lower()
 
     msg = MIMEMultipart("alternative")
@@ -32,27 +36,31 @@ def _send_email_smtp(to_email: str, subject: str, text_body: str, html_body: str
     msg.attach(part1)
     msg.attach(part2)
 
-    # Strategy 1: Try Port 465 (Direct SSL) - Best for Cloud/Render
-    try:
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=7) as server:
-            server.login(settings.smtp_username.strip(), settings.smtp_password.strip())
-            server.send_message(msg)
-            logger.info(f"Successfully sent email via Port 465 SSL to {recipient}")
-            return
-    except Exception as ssl_err:
-        logger.warning(f"Port 465 SSL attempt failed ({ssl_err}). Trying Port 587 STARTTLS...")
+    ssl_context = ssl.create_default_context()
+    ssl_context.check_hostname = False
+    ssl_context.verify_mode = ssl.CERT_NONE
 
-    # Strategy 2: Try Port 587 (STARTTLS)
+    # Attempt 1: Port 465 SSL (Direct SSL Socket - Best for Cloud/Render)
     try:
-        with smtplib.SMTP("smtp.gmail.com", 587, timeout=7) as server:
-            server.starttls()
-            server.login(settings.smtp_username.strip(), settings.smtp_password.strip())
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=ssl_context, timeout=10) as server:
+            server.login(smtp_user, smtp_pass)
             server.send_message(msg)
-            logger.info(f"Successfully sent email via Port 587 STARTTLS to {recipient}")
+            logger.info(f"Successfully delivered email via Port 465 SSL to {recipient}")
             return
-    except Exception as tls_err:
-        logger.error(f"Port 587 STARTTLS attempt also failed ({tls_err}).")
-        raise RuntimeError(f"SMTP delivery failed: {tls_err}") from tls_err
+    except Exception as err465:
+        logger.warning(f"Port 465 SSL delivery attempt failed ({err465}). Trying Port 587 STARTTLS...")
+
+    # Attempt 2: Port 587 STARTTLS
+    try:
+        with smtplib.SMTP("smtp.gmail.com", 587, timeout=10) as server:
+            server.starttls(context=ssl_context)
+            server.login(smtp_user, smtp_pass)
+            server.send_message(msg)
+            logger.info(f"Successfully delivered email via Port 587 TLS to {recipient}")
+            return
+    except Exception as err587:
+        logger.error(f"Port 587 TLS delivery attempt also failed ({err587}).")
+        raise RuntimeError(f"SMTP delivery failed to {recipient}: {err587}") from err587
 
 
 def send_verification_email(*, recipient: str, name: str, otp: str) -> None:

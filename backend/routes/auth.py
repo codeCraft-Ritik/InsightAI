@@ -113,21 +113,15 @@ def signup(payload: SignupRequest) -> SignupResponse:
     try:
         send_verification_email(recipient=payload.email.strip(), name=payload.name.strip(), otp=otp)
         email_sent = True
-    except Exception:
+    except Exception as exc:
+        logger.error(f"Email delivery error to {payload.email}: {exc}")
         email_sent = False
 
-    if email_sent:
-        return SignupResponse(
-            message="A 6-digit verification code has been sent to your email. Check your inbox and spam folder.",
-            email=payload.email.strip().lower(),
-            otp_code=None,
-        )
-    else:
-        return SignupResponse(
-            message=f"Verification code generated! (Use code {otp} to verify your account).",
-            email=payload.email.strip().lower(),
-            otp_code=otp,
-        )
+    return SignupResponse(
+        message="A 6-digit verification code has been sent to your email. Check your inbox and spam folder.",
+        email=payload.email.strip().lower(),
+        otp_code=None,
+    )
 
 
 @router.post("/verify-otp", response_model=TokenResponse)
@@ -147,26 +141,17 @@ def resend_otp(payload: EmailRequest) -> SignupResponse:
     if bool(record.get("verified")):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Account is already verified")
     otp = generate_otp()
-    email_sent = False
     try:
         resend_verification_code(payload.email, otp)
         send_verification_email(recipient=payload.email.strip(), name=str(record.get("name", "there")), otp=otp)
-        email_sent = True
-    except Exception:
-        email_sent = False
+    except Exception as exc:
+        logger.error(f"Resend email error to {payload.email}: {exc}")
 
-    if email_sent:
-        return SignupResponse(
-            message="Verification code resent to your email.",
-            email=payload.email.strip().lower(),
-            otp_code=None,
-        )
-    else:
-        return SignupResponse(
-            message=f"New code generated! (Use code {otp} to verify your account).",
-            email=payload.email.strip().lower(),
-            otp_code=otp,
-        )
+    return SignupResponse(
+        message="A new 6-digit verification code has been sent to your email.",
+        email=payload.email.strip().lower(),
+        otp_code=None,
+    )
 
 
 @router.post("/login", response_model=TokenResponse)
