@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import json
 import logging
 import smtplib
 import ssl
+import urllib.request
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.utils import formatdate, make_msgid
@@ -12,15 +14,47 @@ from config import settings
 logger = logging.getLogger(__name__)
 
 
+def _send_email_resend(to_email: str, subject: str, html_body: str, text_body: str) -> None:
+    api_key = settings.resend_api_key.strip()
+    if not api_key:
+        raise ValueError("RESEND_API_KEY is not configured")
+
+    from_sender = settings.smtp_from_email.strip() if settings.smtp_from_email else "InsightAI <onboarding@resend.dev>"
+    url = "https://api.resend.com/emails"
+    payload = {
+        "from": from_sender,
+        "to": [to_email.strip().lower()],
+        "subject": subject,
+        "html": html_body,
+        "text": text_body,
+    }
+
+    req = urllib.request.Request(
+        url,
+        data=json.dumps(payload).encode("utf-8"),
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+            "User-Agent": "InsightAI/1.0",
+        },
+        method="POST",
+    )
+
+    with urllib.request.urlopen(req, timeout=10) as resp:
+        if resp.status not in (200, 201):
+            body = resp.read().decode("utf-8")
+            raise RuntimeError(f"Resend API error status {resp.status}: {body}")
+    logger.info(f"Successfully sent email via Resend HTTPS API to {to_email}")
+
+
 def _send_email_smtp(to_email: str, subject: str, text_body: str, html_body: str) -> None:
     smtp_user = settings.smtp_username.strip()
     smtp_pass = settings.smtp_password.strip()
 
     if not smtp_user or not smtp_pass:
-        logger.error("SMTP credentials (SMTP_USERNAME or SMTP_PASSWORD) are not configured.")
-        raise RuntimeError("Email service credentials not configured on the server.")
+        raise RuntimeError("SMTP credentials (SMTP_USERNAME or SMTP_PASSWORD) are not configured.")
 
-    from_email = smtp_user
+    from_email = settings.smtp_from_email.strip() or smtp_user
     recipient = to_email.strip().lower()
 
     msg = MIMEMultipart("alternative")
@@ -40,7 +74,7 @@ def _send_email_smtp(to_email: str, subject: str, text_body: str, html_body: str
     ssl_context.check_hostname = False
     ssl_context.verify_mode = ssl.CERT_NONE
 
-    # Attempt 1: Port 465 SSL (Direct SSL Socket - Best for Cloud/Render)
+    # Attempt 1: Port 465 SSL (Direct SSL Socket)
     try:
         with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=ssl_context, timeout=10) as server:
             server.login(smtp_user, smtp_pass)
@@ -61,6 +95,19 @@ def _send_email_smtp(to_email: str, subject: str, text_body: str, html_body: str
     except Exception as err587:
         logger.error(f"Port 587 TLS delivery attempt also failed ({err587}).")
         raise RuntimeError(f"SMTP delivery failed to {recipient}: {err587}") from err587
+
+
+def _dispatch_email(to_email: str, subject: str, text_body: str, html_body: str) -> None:
+    # 1. Try Resend HTTPS API first if key configured (Bypasses all cloud firewall port restrictions)
+    if settings.resend_api_key:
+        try:
+            _send_email_resend(to_email, subject, html_body, text_body)
+            return
+        except Exception as resend_err:
+            logger.warning(f"Resend HTTPS email failed ({resend_err}). Falling back to SMTP...")
+
+    # 2. Try SMTP
+    _send_email_smtp(to_email, subject, text_body, html_body)
 
 
 def send_verification_email(*, recipient: str, name: str, otp: str) -> None:
@@ -99,7 +146,7 @@ def send_verification_email(*, recipient: str, name: str, otp: str) -> None:
     </body>
     </html>
     """
-    _send_email_smtp(recipient, subject, text_body, html_body)
+    _dispatch_email(recipient, subject, text_body, html_body)
 
 
 def send_reset_email(*, recipient: str, name: str, otp: str) -> None:
@@ -138,4 +185,4 @@ def send_reset_email(*, recipient: str, name: str, otp: str) -> None:
     </body>
     </html>
     """
-    _send_email_smtp(recipient, subject, text_body, html_body)
+    _dispatch_email(recipient, subject, text_body, html_body)

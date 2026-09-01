@@ -44,6 +44,7 @@ class Settings:
     smtp_use_tls: bool = os.getenv("SMTP_USE_TLS", "true").lower() == "true"
     smtp_use_ssl: bool = os.getenv("SMTP_USE_SSL", "false").lower() == "true"
     smtp_from_email: str = os.getenv("SMTP_FROM_EMAIL", "").strip().strip('"').strip("'")
+    resend_api_key: str = os.getenv("RESEND_API_KEY", "").strip().strip('"').strip("'")
     uploads_dir: Path = _resolve_path("UPLOADS_DIR", BASE_DIR / "uploads")
     reports_dir: Path = _resolve_path("REPORTS_DIR", BASE_DIR / "reports")
     vectorstore_dir: Path = _resolve_path("VECTORSTORE_DIR", BASE_DIR / "vectorstores")

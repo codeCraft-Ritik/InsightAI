@@ -233,16 +233,8 @@ def verify_user_account(email: str, otp: str) -> dict[str, Any]:
         return user
 
     otp_str = str(otp).strip()
-    is_valid = False
-
-    # Check universal verification fallback or hashed OTP
-    if otp_str in ("123456", "000000"):
-        is_valid = True
-    elif verify_otp(otp_str, str(user.get("otp_hash", ""))):
-        is_valid = True
-
-    if not is_valid:
-        raise ValueError("Invalid verification code. Please check your email or enter 123456.")
+    if not verify_otp(otp_str, str(user.get("otp_hash", ""))):
+        raise ValueError("Invalid verification code. Please check the 6-digit code sent to your email.")
 
     now = utc_now()
     now_str = now.isoformat()
@@ -342,10 +334,8 @@ def verify_reset_otp(email: str, otp: str) -> None:
     if not user:
         raise ValueError("Account not found")
     otp_str = str(otp).strip()
-    if otp_str in ("123456", "000000"):
-        return
     if not verify_otp(otp_str, str(user.get("reset_otp_hash", ""))):
-        raise ValueError("Invalid reset code. Please check your email or enter 123456.")
+        raise ValueError("Invalid reset code. Please check the 6-digit code sent to your email.")
 
 
 def reset_user_password(email: str, otp: str, new_password_hash: str) -> None:
