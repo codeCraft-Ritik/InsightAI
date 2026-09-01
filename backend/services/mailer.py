@@ -4,6 +4,7 @@ import logging
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from email.utils import formatdate, make_msgid
 
 from config import settings
 
@@ -15,41 +16,47 @@ def _send_email_smtp(to_email: str, subject: str, text_body: str, html_body: str
         logger.error("SMTP credentials are not configured. Cannot send email.")
         raise RuntimeError("Email service is not configured on the server.")
 
-    from_email = settings.smtp_from_email or settings.smtp_username
+    from_email = settings.smtp_username.strip()
+    recipient = to_email.strip().lower()
+
     msg = MIMEMultipart("alternative")
     msg["Subject"] = subject
-    msg["From"] = f"{settings.app_name} <{from_email}>"
-    msg["To"] = to_email
+    msg["From"] = f"InsightAI <{from_email}>"
+    msg["To"] = recipient
+    msg["Reply-To"] = from_email
+    msg["Date"] = formatdate(localtime=True)
+    msg["Message-ID"] = make_msgid(domain="gmail.com")
 
+    # Plain text and HTML parts (UTF-8)
     part1 = MIMEText(text_body, "plain", "utf-8")
     part2 = MIMEText(html_body, "html", "utf-8")
     msg.attach(part1)
     msg.attach(part2)
 
-    # Auto-detect SSL (465) vs STARTTLS (587 / 25)
     use_ssl = settings.smtp_use_ssl or settings.smtp_port == 465
 
     if use_ssl:
         with smtplib.SMTP_SSL(settings.smtp_host, settings.smtp_port, timeout=15) as server:
             server.login(settings.smtp_username, settings.smtp_password)
-            server.sendmail(from_email, [to_email], msg.as_string())
+            server.send_message(msg)
     else:
         with smtplib.SMTP(settings.smtp_host, settings.smtp_port, timeout=15) as server:
             if settings.smtp_use_tls or settings.smtp_port == 587:
                 server.starttls()
             server.login(settings.smtp_username, settings.smtp_password)
-            server.sendmail(from_email, [to_email], msg.as_string())
+            server.send_message(msg)
 
-    logger.info(f"Successfully sent email to {to_email}")
+    logger.info(f"Successfully sent email to {recipient}")
 
 
 def send_verification_email(*, recipient: str, name: str, otp: str) -> None:
-    subject = f"{otp} is your {settings.app_name} verification code"
+    subject = f"{otp} is your InsightAI verification code"
     text_body = (
         f"Hello {name},\n\n"
         f"Welcome to InsightAI! Your 6-digit verification code is: {otp}\n\n"
         f"This code will expire in {settings.otp_expire_minutes} minutes.\n\n"
-        "If you did not request this, please ignore this email."
+        "If you did not request this, please ignore this email.\n\n"
+        "InsightAI Team"
     )
     html_body = f"""
     <!DOCTYPE html>
@@ -72,8 +79,8 @@ def send_verification_email(*, recipient: str, name: str, otp: str) -> None:
             <div class="title">Verify Your Account</div>
             <div class="desc">Hello <strong>{name}</strong>,<br>Use the 6-digit verification code below to activate your InsightAI account:</div>
             <div class="otp-box">{otp}</div>
-            <div class="desc">This code expires in <strong>{settings.otp_expire_minutes} minutes</strong>. Do not share this code with anyone.</div>
-            <div class="footer">Autonomous Data Intelligence & ML Platform &bull; InsightAI</div>
+            <div class="desc">This code expires in <strong>{settings.otp_expire_minutes} minutes</strong>.<br>Do not share this code with anyone.</div>
+            <div class="footer">InsightAI &bull; Autonomous Data Intelligence & ML Platform</div>
         </div>
     </body>
     </html>
@@ -82,12 +89,13 @@ def send_verification_email(*, recipient: str, name: str, otp: str) -> None:
 
 
 def send_reset_email(*, recipient: str, name: str, otp: str) -> None:
-    subject = f"{otp} is your {settings.app_name} password reset code"
+    subject = f"{otp} is your InsightAI password reset code"
     text_body = (
         f"Hello {name},\n\n"
         f"We received a request to reset your InsightAI password. Your reset code is: {otp}\n\n"
         f"This code will expire in {settings.otp_expire_minutes} minutes.\n\n"
-        "If you did not request this, please ignore this email — your password will not change."
+        "If you did not request this, please ignore this email — your password will not change.\n\n"
+        "InsightAI Team"
     )
     html_body = f"""
     <!DOCTYPE html>
@@ -110,8 +118,8 @@ def send_reset_email(*, recipient: str, name: str, otp: str) -> None:
             <div class="title">Password Reset Request</div>
             <div class="desc">Hello <strong>{name}</strong>,<br>We received a request to reset your password. Use the code below:</div>
             <div class="otp-box">{otp}</div>
-            <div class="desc">This code expires in <strong>{settings.otp_expire_minutes} minutes</strong>. If you did not make this request, you can safely ignore this email.</div>
-            <div class="footer">Autonomous Data Intelligence & ML Platform &bull; InsightAI</div>
+            <div class="desc">This code expires in <strong>{settings.otp_expire_minutes} minutes</strong>.<br>If you did not make this request, you can safely ignore this email.</div>
+            <div class="footer">InsightAI &bull; Autonomous Data Intelligence & ML Platform</div>
         </div>
     </body>
     </html>

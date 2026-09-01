@@ -352,6 +352,9 @@ export function AuthPage({ onAuthSuccess, onBack }: AuthPageProps) {
                 <button className="auth-primary-btn" onClick={handleVerifyOtp} disabled={isBusy}>Verify &amp; Continue</button>
                 <button className="auth-secondary-btn" onClick={handleResendOtp} disabled={isBusy}>Resend Code</button>
               </div>
+              <p className="auth-email-tip" style={{ marginTop: '16px', fontSize: '13px', color: 'rgba(255,255,255,0.6)', textAlign: 'center' }}>
+                Didn't see the email? Please check your <strong>Spam</strong> or <strong>Promotions</strong> tab.
+              </p>
             </div>
           )}
         </div>
