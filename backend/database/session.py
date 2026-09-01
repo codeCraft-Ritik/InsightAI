@@ -67,28 +67,48 @@ def initialize_database() -> None:
             except Exception:
                 pass
             connection.execute("DROP TABLE IF EXISTS old_datasets")
-        else:
-            connection.execute(
-                """
-                CREATE TABLE IF NOT EXISTS datasets (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    user_id TEXT NOT NULL,
-                    filename TEXT NOT NULL,
-                    raw_file_path TEXT NOT NULL,
-                    cleaned_file_path TEXT NOT NULL,
-                    file_type TEXT NOT NULL,
-                    row_count INTEGER NOT NULL,
-                    column_count INTEGER NOT NULL,
-                    missing_count INTEGER NOT NULL,
-                    duplicate_count INTEGER NOT NULL,
-                    outlier_count INTEGER NOT NULL,
-                    summary_json TEXT NOT NULL,
-                    stats_json TEXT NOT NULL,
-                    insights_json TEXT NOT NULL,
-                    created_at TEXT NOT NULL
-                )
-                """
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS datasets (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id TEXT NOT NULL,
+                filename TEXT NOT NULL,
+                raw_file_path TEXT NOT NULL,
+                cleaned_file_path TEXT NOT NULL,
+                file_type TEXT NOT NULL,
+                row_count INTEGER NOT NULL,
+                column_count INTEGER NOT NULL,
+                missing_count INTEGER NOT NULL,
+                duplicate_count INTEGER NOT NULL,
+                outlier_count INTEGER NOT NULL,
+                summary_json TEXT NOT NULL,
+                stats_json TEXT NOT NULL,
+                insights_json TEXT NOT NULL,
+                created_at TEXT NOT NULL
             )
+            """
+        )
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS users (
+                id TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                age INTEGER DEFAULT 0,
+                gender TEXT DEFAULT '',
+                email TEXT UNIQUE NOT NULL,
+                location TEXT DEFAULT '',
+                password_hash TEXT NOT NULL,
+                verified INTEGER NOT NULL DEFAULT 0,
+                otp_hash TEXT,
+                otp_expires_at TEXT,
+                reset_otp_hash TEXT,
+                reset_otp_expires_at TEXT,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                last_login_at TEXT
+            )
+            """
+        )
 
 
 def fetch_one(query: str, parameters: tuple[Any, ...] = ()) -> sqlite3.Row | None:
