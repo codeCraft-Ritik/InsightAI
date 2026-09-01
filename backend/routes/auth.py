@@ -109,25 +109,20 @@ def signup(payload: SignupRequest) -> SignupResponse:
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
 
-    email_sent = False
     try:
         send_verification_email(recipient=payload.email.strip(), name=payload.name.strip(), otp=otp)
-        email_sent = True
-    except Exception:
-        pass  # Gracefully fall back to showing OTP in response
+    except Exception as exc:
+        if not settings.expose_otp_in_response:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Unable to send verification email. Please check your email address and try again.",
+            ) from exc
 
-    if email_sent:
-        return SignupResponse(
-            message="Verification code sent. Check your email and verify your account.",
-            email=payload.email.strip().lower(),
-            otp_code=otp if settings.expose_otp_in_response else None,
-        )
-    else:
-        return SignupResponse(
-            message="Account created! Use the OTP code below to verify your account.",
-            email=payload.email.strip().lower(),
-            otp_code=otp,
-        )
+    return SignupResponse(
+        message="A 6-digit verification code has been sent to your email. Check your inbox and spam folder.",
+        email=payload.email.strip().lower(),
+        otp_code=otp if settings.expose_otp_in_response else None,
+    )
 
 
 @router.post("/verify-otp", response_model=TokenResponse)

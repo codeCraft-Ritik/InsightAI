@@ -352,7 +352,6 @@ export function AuthPage({ onAuthSuccess, onBack }: AuthPageProps) {
                 <button className="auth-primary-btn" onClick={handleVerifyOtp} disabled={isBusy}>Verify &amp; Continue</button>
                 <button className="auth-secondary-btn" onClick={handleResendOtp} disabled={isBusy}>Resend Code</button>
               </div>
-              {pendingSignup?.otp_code && (<div className="demo-otp-hint"><Icon name="spark" /> Demo OTP: {pendingSignup.otp_code}</div>)}
             </div>
           )}
         </div>
