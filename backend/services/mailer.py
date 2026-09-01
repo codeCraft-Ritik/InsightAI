@@ -27,26 +27,32 @@ def _send_email_smtp(to_email: str, subject: str, text_body: str, html_body: str
     msg["Date"] = formatdate(localtime=True)
     msg["Message-ID"] = make_msgid(domain="gmail.com")
 
-    # Plain text and HTML parts (UTF-8)
     part1 = MIMEText(text_body, "plain", "utf-8")
     part2 = MIMEText(html_body, "html", "utf-8")
     msg.attach(part1)
     msg.attach(part2)
 
-    use_ssl = settings.smtp_use_ssl or settings.smtp_port == 465
-
-    if use_ssl:
-        with smtplib.SMTP_SSL(settings.smtp_host, settings.smtp_port, timeout=15) as server:
-            server.login(settings.smtp_username, settings.smtp_password)
+    # Strategy 1: Try Port 465 (Direct SSL) - Best for Cloud/Render
+    try:
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=7) as server:
+            server.login(settings.smtp_username.strip(), settings.smtp_password.strip())
             server.send_message(msg)
-    else:
-        with smtplib.SMTP(settings.smtp_host, settings.smtp_port, timeout=15) as server:
-            if settings.smtp_use_tls or settings.smtp_port == 587:
-                server.starttls()
-            server.login(settings.smtp_username, settings.smtp_password)
-            server.send_message(msg)
+            logger.info(f"Successfully sent email via Port 465 SSL to {recipient}")
+            return
+    except Exception as ssl_err:
+        logger.warning(f"Port 465 SSL attempt failed ({ssl_err}). Trying Port 587 STARTTLS...")
 
-    logger.info(f"Successfully sent email to {recipient}")
+    # Strategy 2: Try Port 587 (STARTTLS)
+    try:
+        with smtplib.SMTP("smtp.gmail.com", 587, timeout=7) as server:
+            server.starttls()
+            server.login(settings.smtp_username.strip(), settings.smtp_password.strip())
+            server.send_message(msg)
+            logger.info(f"Successfully sent email via Port 587 STARTTLS to {recipient}")
+            return
+    except Exception as tls_err:
+        logger.error(f"Port 587 STARTTLS attempt also failed ({tls_err}).")
+        raise RuntimeError(f"SMTP delivery failed: {tls_err}") from tls_err
 
 
 def send_verification_email(*, recipient: str, name: str, otp: str) -> None:
