@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import logging
+from typing import Any
+
 from config import settings
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -16,6 +19,7 @@ from database.mongo_users import (
     store_reset_otp,
     update_last_login,
     verify_user_account,
+    verify_reset_otp as _verify_reset_otp_logic,
 )
 from models.user import (
     EmailRequest,
@@ -33,25 +37,27 @@ from models.user import (
 from services.mailer import send_reset_email, send_verification_email
 from services.security import create_access_token, decode_access_token, hash_password, verify_password
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter(prefix="/auth", tags=["auth"])
 security = HTTPBearer(auto_error=False)
 
 
-def _require_user_record(email: str) -> dict[str, object]:
+def _require_user_record(email: str) -> dict[str, Any]:
     user = get_user_by_email(email)
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Account not found")
     return user
 
 
-def _build_user_response(record) -> UserResponse:
+def _build_user_response(record: dict[str, Any] | None) -> UserResponse:
     user = serialize_user(record)
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     return UserResponse(**user)
 
 
-def _issue_token(record: dict[str, object]) -> TokenResponse:
+def _issue_token(record: dict[str, Any]) -> TokenResponse:
     user = serialize_user(record)
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
@@ -59,7 +65,7 @@ def _issue_token(record: dict[str, object]) -> TokenResponse:
     return TokenResponse(access_token=token, user=UserResponse(**user))
 
 
-def get_current_user(credentials: HTTPAuthorizationCredentials | None = Depends(security)) -> dict[str, object]:
+def get_current_user(credentials: HTTPAuthorizationCredentials | None = Depends(security)) -> dict[str, Any]:
     if not credentials:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication required")
     payload = decode_access_token(credentials.credentials)
@@ -75,7 +81,7 @@ def get_current_user(credentials: HTTPAuthorizationCredentials | None = Depends(
     return user_data
 
 
-def verify_access_token(token: str) -> dict[str, object]:
+def verify_access_token(token: str) -> dict[str, Any]:
     """Verify a raw JWT string (used when token is passed as a query param)."""
     try:
         payload = decode_access_token(token)
@@ -168,7 +174,7 @@ def login(payload: LoginRequest) -> TokenResponse:
 
 
 @router.get("/me", response_model=UserResponse)
-def me(current_user: dict[str, object] = Depends(get_current_user)) -> UserResponse:
+def me(current_user: dict[str, Any] = Depends(get_current_user)) -> UserResponse:
     return UserResponse(**current_user)
 
 
@@ -182,8 +188,8 @@ def forgot_password(payload: ForgotPasswordRequest) -> MessageResponse:
             store_reset_otp(payload.email, otp)
             name = str(user.get("name", "there"))
             send_reset_email(recipient=payload.email.strip(), name=name, otp=otp)
-        except Exception:
-            pass  # silently ignore — security by not leaking details
+        except Exception as exc:
+            logger.error(f"Failed to send reset email to {payload.email}: {exc}")
     return MessageResponse(message="If an account with that email exists, a password-reset code has been sent.")
 
 
@@ -191,8 +197,7 @@ def forgot_password(payload: ForgotPasswordRequest) -> MessageResponse:
 def verify_reset_otp_endpoint(payload: VerifyResetOtpRequest) -> MessageResponse:
     """Step 2: Validate the reset OTP (without changing password yet)."""
     try:
-        from database.mongo_users import verify_reset_otp as _verify
-        _verify(payload.email, payload.otp)
+        _verify_reset_otp_logic(payload.email, payload.otp)
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
     return MessageResponse(message="Code verified. You may now set a new password.")
