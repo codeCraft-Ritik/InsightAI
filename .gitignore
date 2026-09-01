@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.env
+
+# Node
+node_modules/
+dist/
+coverage/
+
+# Backend runtime data files (Ignored so your repo stays lightweight and clean)
+backend/uploads/*
+backend/reports/*
+backend/vectorstores/*
+backend/models_saved/*
+backend/database/*.sqlite3
+
+# Keep the empty folder structures in GitHub
+!backend/uploads/.gitkeep
+!backend/reports/.gitkeep
+!backend/database/.gitkeep
+!backend/vectorstores/.gitkeep
+!backend/models_saved/.gitkeep
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/

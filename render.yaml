@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: insightai
+    env: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /api/dashboard/summary
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: OLLAMA_BASE_URL
+        value: http://localhost:11434
+      - key: OLLAMA_CHAT_MODEL
+        value: llama3
+      - key: OLLAMA_EMBEDDING_MODEL
+        value: nomic-embed-text
+      - key: CORS_ORIGINS
+        value: "*"

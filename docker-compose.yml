@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  insightai:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: insightai-app
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+      - SECRET_KEY=your-production-secret-key-change-this
+      - OLLAMA_BASE_URL=http://host.docker.internal:11434
+      - OLLAMA_CHAT_MODEL=llama3
+      - OLLAMA_EMBEDDING_MODEL=nomic-embed-text
+    volumes:
+      - insightai-uploads:/app/backend/uploads
+      - insightai-reports:/app/backend/reports
+      - insightai-models:/app/backend/models_saved
+      - insightai-db:/app/backend/database
+    restart: always
+
+volumes:
+  insightai-uploads:
+  insightai-reports:
+  insightai-models:
+  insightai-db:

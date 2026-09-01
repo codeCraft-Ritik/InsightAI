@@ -1,0 +1,16 @@
+.git
+.gitignore
+.env
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+ENV/
+node_modules/
+backend/venv/
+frontend/node_modules/
+backend/__pycache__/
+backend/database/insightai.sqlite3
