@@ -70,6 +70,29 @@ export function DashboardPage({ user, token, onSignOut }: DashboardPageProps) {
     ? resolvedUser.name.trim().charAt(0).toUpperCase()
     : '?';
 
+  // Live Cloud Demo Pop-Up Modal State
+  const [demoModalOpen, setDemoModalOpen] = useState(false);
+
+  useEffect(() => {
+    try {
+      const hasSeen = localStorage.getItem('insightai_cloud_demo_seen');
+      if (!hasSeen) {
+        setDemoModalOpen(true);
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  const handleDismissDemoModal = () => {
+    setDemoModalOpen(false);
+    try {
+      localStorage.setItem('insightai_cloud_demo_seen', 'true');
+    } catch {
+      // ignore
+    }
+  };
+
   // Datasets State
   const [datasets, setDatasets] = useState<DatasetItem[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -365,6 +388,16 @@ export function DashboardPage({ user, token, onSignOut }: DashboardPageProps) {
 
           {/* Right: Avatar + Sign Out */}
           <div className="dash-nav-right">
+            <button
+              type="button"
+              className="cloud-demo-nav-btn"
+              onClick={() => setDemoModalOpen(true)}
+              title="Cloud Demo Details & RAM Info"
+            >
+              <Icon name="spark" />
+              <span>Live Cloud Demo</span>
+            </button>
+
             <div className="dash-avatar-circle" title={resolvedUser?.name ?? 'User'}>
               {avatarInitial}
             </div>
@@ -377,6 +410,77 @@ export function DashboardPage({ user, token, onSignOut }: DashboardPageProps) {
           </div>
         </nav>
       </div>
+
+      {/* ── LIVE CLOUD DEMO POP-UP MODAL ── */}
+      {demoModalOpen && (
+        <div className="demo-modal-overlay" onClick={handleDismissDemoModal}>
+          <div className="demo-modal-card" onClick={(e) => e.stopPropagation()}>
+            <div className="demo-modal-header">
+              <div className="demo-modal-badge">
+                <Icon name="spark" /> RENDER CLOUD LIVE PREVIEW
+              </div>
+              <button className="demo-modal-close" onClick={handleDismissDemoModal} title="Close">✕</button>
+            </div>
+
+            <h2 className="demo-modal-title">Welcome to InsightAI Studio</h2>
+            <p className="demo-modal-desc">
+              You are exploring the live deployment hosted on <strong>Render Cloud Free Tier (512MB RAM)</strong>.
+            </p>
+
+            <div className="demo-modal-features-grid">
+              <div className="demo-feat-item">
+                <div className="feat-icon green"><Icon name="check-circle" /></div>
+                <div>
+                  <strong>Autonomous Data Cleaning &amp; EDA</strong>
+                  <p>Upload CSV / Excel files for automatic schema inference, deduplication, and outlier IQR normalization.</p>
+                </div>
+              </div>
+
+              <div className="demo-feat-item">
+                <div className="feat-icon blue"><Icon name="check-circle" /></div>
+                <div>
+                  <strong>Interactive Visual Analytics</strong>
+                  <p>Plotly correlation matrices, distribution histograms, and column summaries.</p>
+                </div>
+              </div>
+
+              <div className="demo-feat-item">
+                <div className="feat-icon purple"><Icon name="check-circle" /></div>
+                <div>
+                  <strong>AutoML Training Studio &bull; .pkl Export</strong>
+                  <p>Train Classification, Regression, and Clustering pipelines with downloadable model artifacts.</p>
+                </div>
+              </div>
+
+              <div className="demo-feat-item note">
+                <div className="feat-icon amber"><Icon name="warning" /></div>
+                <div>
+                  <strong>Local Ollama AI Chat Notice</strong>
+                  <p>Render's 512MB RAM container cannot load 8GB local neural models (Llama 3). For full offline RAG AI chat, clone the repo and run locally in 3 steps!</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="demo-modal-actions">
+              <a
+                href="https://github.com/codeCraft-Ritik/InsightAI"
+                target="_blank"
+                rel="noreferrer"
+                className="demo-github-btn"
+              >
+                <Icon name="spark" /> Star on GitHub &rarr;
+              </a>
+              <button
+                type="button"
+                className="demo-explore-btn"
+                onClick={handleDismissDemoModal}
+              >
+                🚀 Continue Exploring Studio
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Main Content Area */}
       <div className="dash-main">
